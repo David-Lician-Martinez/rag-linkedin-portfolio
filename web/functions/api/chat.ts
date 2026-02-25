@@ -1,3 +1,5 @@
+const BUILD_TAG = "OPENAI_V1_2026-02-25";
+
 type ChatRequest = { question?: string };
 
 type Env = {
@@ -60,7 +62,7 @@ export const onRequestPost = async (
   const data = (await resp.json()) as any;
   const answer = data?.choices?.[0]?.message?.content ?? "";
 
-  return new Response(JSON.stringify({ answer, sources: [] }), {
+  return new Response(JSON.stringify({ answer, sources: [], build: BUILD_TAG }), {
     headers: { "Content-Type": "application/json" },
   });
 };
