@@ -1,35 +1,64 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import { TurnstileGate } from "./TurnstileGate";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSend = async () => {
+    if (!question) return;
+    if (!turnstileToken) {
+      alert("Completa el Turnstile primero.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, turnstileToken }),
+      });
+
+      const data = await response.json();
+      setAnswer(JSON.stringify(data, null, 2));
+    } catch (err) {
+      setAnswer("Error llamando a la API.");
+    }
+
+    setLoading(false);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div style={{ maxWidth: 600, margin: "40px auto", textAlign: "center" }}>
+      <h1>RAG Portfolio</h1>
+
+      <textarea
+        placeholder="Hazme una pregunta..."
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+        style={{ width: "100%", height: 80 }}
+      />
+
+      <div style={{ margin: "20px 0" }}>
+        <TurnstileGate onVerify={(token) => setTurnstileToken(token)} />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+
+      <button onClick={handleSend} disabled={loading}>
+        {loading ? "Pensando..." : "Enviar"}
+      </button>
+
+      {answer && (
+        <pre style={{ marginTop: 20, textAlign: "left", whiteSpace: "pre-wrap" }}>
+          {answer}
+        </pre>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
