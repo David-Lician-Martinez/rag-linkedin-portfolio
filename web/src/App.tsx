@@ -1,15 +1,19 @@
-import { useState } from "react";
-import { TurnstileGate } from "./TurnstileGate";
+import { useRef, useState } from "react";
+import { TurnstileGate, TurnstileGateHandle } from "./TurnstileGate";
 import "./App.css";
 
 function App() {
+  const gateRef = useRef<TurnstileGateHandle>(null);
+
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
-    if (!question) return;
+    const q = question.trim();
+    if (!q) return;
+
     if (!turnstileToken) {
       alert("Completa el Turnstile primero.");
       return;
@@ -21,16 +25,61 @@ function App() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, turnstileToken }),
+        body: JSON.stringify({ question: q, turnstileToken }),
       });
 
-      const data = await response.json();
-      setAnswer(JSON.stringify(data, null, 2));
-    } catch (err) {
-      setAnswer("Error llamando a la API.");
-    }
+      const text = await response.text();
+      let payload: any = null;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = { raw: text };
+      }
 
-    setLoading(false);
+      if (!response.ok) {
+        if (response.status === 429) {
+          const retryAfter = response.headers.get("Retry-After");
+          setAnswer(
+            JSON.stringify(
+              {
+                error: "rate_limited",
+                retry_after: retryAfter ? Number(retryAfter) : null,
+                details: payload,
+              },
+              null,
+              2
+            )
+          );
+          return;
+        }
+
+        if (response.status === 403) {
+          setAnswer(
+            JSON.stringify({ error: "forbidden", details: payload }, null, 2)
+          );
+          return;
+        }
+
+        setAnswer(
+          JSON.stringify(
+            { error: "request_failed", status: response.status, details: payload },
+            null,
+            2
+          )
+        );
+        return;
+      }
+
+      setAnswer(JSON.stringify(payload, null, 2));
+    } catch {
+      setAnswer("Error llamando a la API.");
+    } finally {
+      setLoading(false);
+
+      // Fuerza token nuevo para la siguiente petición + resetea el widget
+      setTurnstileToken("");
+      gateRef.current?.reset();
+    }
   };
 
   return (
@@ -45,7 +94,10 @@ function App() {
       />
 
       <div style={{ margin: "20px 0" }}>
-        <TurnstileGate onVerify={(token) => setTurnstileToken(token)} />
+        <TurnstileGate
+          ref={gateRef}
+          onVerify={(token) => setTurnstileToken(token)}
+        />
       </div>
 
       <button onClick={handleSend} disabled={loading}>
