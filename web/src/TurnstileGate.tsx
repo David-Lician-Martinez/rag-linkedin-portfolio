@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import Turnstile from "react-turnstile";
 
 type Props = {
@@ -9,31 +9,29 @@ export type TurnstileGateHandle = {
   reset: () => void;
 };
 
-export const TurnstileGate = forwardRef<TurnstileGateHandle, Props>(({ onVerify }, ref) => {
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
+export const TurnstileGate = forwardRef<TurnstileGateHandle, Props>(
+  ({ onVerify }, ref) => {
+    const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
+    const [widgetKey, setWidgetKey] = useState(0);
 
-  // react-turnstile expone métodos en ref (como reset)
-  const tsRef = useRef<any>(null);
+    useImperativeHandle(ref, () => ({
+      reset: () => {
+        // Forzamos re-mount del widget
+        setWidgetKey((k) => k + 1);
+        onVerify(""); // limpiamos token en el parent
+      },
+    }));
 
-  useImperativeHandle(ref, () => ({
-    reset: () => {
-      try {
-        tsRef.current?.reset?.();
-      } catch {
-        // no-op
-      }
-    },
-  }));
-
-  return (
-    <Turnstile
-      ref={tsRef}
-      sitekey={siteKey}
-      onVerify={(token: string) => onVerify(token)}
-      onExpire={() => onVerify("")} // si expira el token, lo vaciamos
-      theme="auto"
-    />
-  );
-});
+    return (
+      <Turnstile
+        key={widgetKey}
+        sitekey={siteKey}
+        onVerify={(token: string) => onVerify(token)}
+        onExpire={() => onVerify("")}
+        theme="auto"
+      />
+    );
+  }
+);
 
 TurnstileGate.displayName = "TurnstileGate";

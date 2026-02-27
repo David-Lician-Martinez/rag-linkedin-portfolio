@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { TurnstileGate, TurnstileGateHandle } from "./TurnstileGate";
+import { TurnstileGate } from "./TurnstileGate";
+import type { TurnstileGateHandle } from "./TurnstileGate";
 import "./App.css";
 
 function App() {
@@ -76,7 +77,7 @@ function App() {
     } finally {
       setLoading(false);
 
-      // Fuerza token nuevo para la siguiente petición + resetea el widget
+      // reseteo: limpia token y fuerza re-mount del widget
       setTurnstileToken("");
       gateRef.current?.reset();
     }
