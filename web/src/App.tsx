@@ -128,7 +128,7 @@ function App() {
                 </div>
 
                 {sources.length > 0 && (
-                  <details className="sources" open>
+                  <details className="sources">
                     <summary className="sourcesSummary">
                       Fuentes <span className="sourcesCount">{sources.length}</span>
                     </summary>
