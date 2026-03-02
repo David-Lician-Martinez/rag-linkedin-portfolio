@@ -1,1 +1,1 @@
-Aún construyendo el repositorio.
+Actualmente, estructurando el repositorio.
