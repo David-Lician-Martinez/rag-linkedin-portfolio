@@ -30,6 +30,7 @@ body{
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
+/* Layout */
 .page{
   min-height:100vh;
   display:flex;
@@ -41,7 +42,31 @@ body{
 .shell{
   width: 100%;
   max-width: 920px;
-  margin: 0 auto;   /* centra definitivamente */
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;      /* centra header y chat */
+}
+
+.header{
+  width: 100%;
+  text-align:center;
+  margin-bottom: 22px;
+}
+
+.title{
+  margin:0;
+  font-size: 34px;
+  letter-spacing:-0.8px;
+  font-weight: 750;
+}
+
+.subtitle{
+  margin: 10px auto 0;
+  max-width: 640px;
+  color: var(--muted);
+  line-height: 1.5;
+}
 
 /* Nombre debajo del título */
 .nameTag{
@@ -77,29 +102,12 @@ body{
 .footerDivider{
   opacity: 0.6;
 }
-}
-
-.header{
-  text-align:center;
-  margin-bottom: 22px;
-}
-
-.title{
-  margin:0;
-  font-size: 34px;
-  letter-spacing:-0.8px;
-  font-weight: 750;
-}
-
-.subtitle{
-  margin: 10px auto 0;
-  max-width: 640px;
-  color: var(--muted);
-  line-height: 1.5;
-}
 
 /* Chat container */
 .chat{
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto; /* centra */
   border: 1px solid var(--border);
   background: rgba(10,14,20,0.55);
   backdrop-filter: blur(10px);
