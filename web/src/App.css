@@ -6,8 +6,8 @@
 
   /* Soft blue accents (no chillón) */
   --blue0:#0b1f2e;   /* sombras / bordes */
-  --blue1:#123049;   /* hover */
-  --blue2:#1b3f5f;   /* acento suave */
+  --blue1:#153a5c;   /* hover */
+  --blue2:#2a5d87;   /* acento suave */
 
   --text:#e8eef5;
   --muted:#a7b3c2;
@@ -33,13 +33,50 @@ body{
 .page{
   min-height:100vh;
   display:flex;
-  justify-content:center;
-  padding: 48px 18px;
+  justify-content:center;   /* centra horizontal */
+  align-items:flex-start;   /* mantiene arriba */
+  padding: 60px 24px;
 }
 
 .shell{
-  width: 920px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;   /* centra definitivamente */
+
+/* Nombre debajo del título */
+.nameTag{
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: rgba(200,220,240,0.85);
+}
+
+/* Footer redes */
+.footer{
+  position: fixed;
+  bottom: 20px;
+  left: 28px;
+  font-size: 13px;
+  color: rgba(167,179,194,0.7);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.footer a{
+  color: rgba(200,220,240,0.85);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer a:hover{
+  color: #5da8ff; /* azul ligeramente más claro al hover */
+}
+
+.footerDivider{
+  opacity: 0.6;
+}
 }
 
 .header{
@@ -261,25 +298,33 @@ body{
 }
 
 .composerInput:focus{
-  border-color: rgba(27,63,95,0.55);
-  box-shadow: 0 0 0 4px rgba(27,63,95,0.18);
+  border-color: rgba(42,93,135,0.6);
+  box-shadow: 0 0 0 4px rgba(42,93,135,0.18);
 }
 
 /* Send button */
 .sendBtn{
-  min-width: 110px;
+  min-width: 120px;
   border-radius: 14px;
-  border: 1px solid rgba(27,63,95,0.50);
-  background: linear-gradient(180deg, rgba(27,63,95,0.55), rgba(18,48,73,0.45));
+  border: 1px solid rgba(42,93,135,0.6);
+  background: linear-gradient(
+    180deg,
+    rgba(42,93,135,0.45),
+    rgba(21,58,92,0.55)
+  );
   color: var(--text);
   font-weight: 650;
   cursor: pointer;
-  transition: transform 0.05s ease, background 0.2s ease, border-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .sendBtn:hover{
-  background: linear-gradient(180deg, rgba(27,63,95,0.70), rgba(18,48,73,0.55));
-  border-color: rgba(27,63,95,0.70);
+  background: linear-gradient(
+    180deg,
+    rgba(42,93,135,0.65),
+    rgba(21,58,92,0.75)
+  );
+  border-color: rgba(42,93,135,0.8);
 }
 
 .sendBtn:active{

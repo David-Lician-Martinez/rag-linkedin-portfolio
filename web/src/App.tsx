@@ -99,7 +99,14 @@ function App() {
       <div className="shell">
         <header className="header">
           <h1 className="title">Ask my profile</h1>
-          <p className="subtitle">Respondo únicamente usando documentos públicos y cito fuentes.</p>
+
+	  <div className="nameTag">
+	    David Licián Martínez
+          </div>
+
+          <p className="subtitle">
+            Respondo únicamente usando documentos públicos y cito fuentes.
+          </p>
         </header>
 
         <main className="chat">
@@ -177,6 +184,25 @@ function App() {
             </div>
           </div>
         </main>
+	<footer className="footer">
+  	  <a 
+    	    href="https://github.com/David-Lician-Martinez" 
+    	    target="_blank" 
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </a>
+
+          <span className="footerDivider">·</span>
+
+          <a 
+            href="https://www.linkedin.com/in/david-lician/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            LinkedIn
+          </a>
+        </footer>
       </div>
     </div>
   );
