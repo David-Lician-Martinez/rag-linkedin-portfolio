@@ -446,7 +446,7 @@ REGLAS OBLIGATORIAS:
 - No inventes datos, fechas ni detalles.
 - Escribe en el idioma en el que se dirijan a ti, breve y claro.
 CITAS (MUY IMPORTANTE):
-- Debes incluir 1-3 citas en el texto.
+- Debes incluir como mínimo 1 cita en el texto.
 - Las citas deben usar EXCLUSIVAMENTE los identificadores SOURCE_ID del contexto.
 - Formato exacto de cita: [S1] o [S2] etc.
 - No uses "[source_path]" ni inventes IDs.`;
