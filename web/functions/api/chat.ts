@@ -307,10 +307,15 @@ function buildContextAndSources(
   store: RagStore,
   picks: Array<{ idx: number; score: number }>
 ): { context: string; sources: any[] } {
-  const sources = picks.map(({ idx, score }) => {
+  // Asignamos IDs cortos y estables dentro de la respuesta
+  const sources = picks.map(({ idx, score }, i) => {
     const c = store.chunks[idx];
+    const sid = `S${i + 1}`; // S1, S2, ...
+
     const excerpt = c.text.length > 240 ? c.text.slice(0, 240) + "…" : c.text;
+
     return {
+      sid, // <- importante
       id: c.id,
       doc_title: c.doc_title || "",
       source_path: c.source_path || "",
@@ -319,12 +324,15 @@ function buildContextAndSources(
     };
   });
 
-  // Context to pass to the model; include stable citation keys
-  const context = picks
-    .map(({ idx }) => {
-      const c = store.chunks[idx];
-      const cite = c.source_path || c.doc_title || c.id;
-      return `SOURCE: [${cite}]\n${c.text}`;
+  // Contexto: cada bloque lleva su SOURCE_ID fijo (S1..Sk)
+  const context = sources
+    .map((s) => {
+      const c = store.chunks.find((x) => x.id === s.id)!;
+      return `SOURCE_ID: ${s.sid}
+TITLE: ${s.doc_title}
+PATH: ${s.source_path}
+CONTENT:
+${c.text}`;
     })
     .join("\n\n---\n\n");
 
@@ -432,12 +440,16 @@ export const onRequest = async ({ request, env }: { request: Request; env: Env }
   const model = env.OPENAI_MODEL || "gpt-4o-mini";
 
   const systemPrompt = `Eres un asistente profesional del portfolio.
-Reglas obligatorias:
+REGLAS OBLIGATORIAS:
 - Responde SOLO usando la información del CONTEXTO proporcionado.
 - Si el contexto no contiene la respuesta, di exactamente: "No tengo información documentada sobre eso."
 - No inventes datos, fechas ni detalles.
-- Escribe en español, breve y claro.
-- Incluye 1-3 citas en el texto usando el formato [source_path] exactamente como aparece en SOURCE: [..].`;
+- Escribe en el idioma en el que se dirijan a ti, breve y claro.
+CITAS (MUY IMPORTANTE):
+- Debes incluir 1-3 citas en el texto.
+- Las citas deben usar EXCLUSIVAMENTE los identificadores SOURCE_ID del contexto.
+- Formato exacto de cita: [S1] o [S2] etc.
+- No uses "[source_path]" ni inventes IDs.`;
 
   const userPrompt = `PREGUNTA:
 ${question}
