@@ -4,7 +4,7 @@ import type { TurnstileGateHandle } from "./TurnstileGate";
 import "./App.css";
 
 type SourceItem = {
-  sid?: string;          // si usas el sistema S1/S2...
+  sid?: string;
   id?: string;
   doc_title?: string;
   source_path?: string;
@@ -49,11 +49,12 @@ function App() {
       }
 
       if (!response.ok) {
-        // UX: mostramos error “humano” + guardamos detalles mínimos
         if (response.status === 429) {
           const retryAfter = response.headers.get("Retry-After");
           setAnswer(
-            `Demasiadas peticiones. Prueba de nuevo en ${retryAfter ? retryAfter : "unos segundos"}s.`
+            `Demasiadas peticiones. Prueba de nuevo en ${
+              retryAfter ? retryAfter : "unos segundos"
+            }s.`
           );
           setSources([]);
           return;
@@ -70,162 +71,113 @@ function App() {
         return;
       }
 
-      // OK
       setAnswer(typeof payload?.answer === "string" ? payload.answer : "");
       setSources(Array.isArray(payload?.sources) ? payload.sources : []);
+
+      // Limpia input después de enviar (sensación chat)
+      setQuestion("");
     } catch {
       setAnswer("Error llamando a la API.");
       setSources([]);
     } finally {
       setLoading(false);
-
-      // reseteo: limpia token y fuerza re-mount del widget
       setTurnstileToken("");
       gateRef.current?.reset();
     }
   };
 
+  const onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+    // Enter envía, Shift+Enter hace salto de línea
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!loading) handleSend();
+    }
+  };
+
   return (
-    <div
-      style={{
-        maxWidth: 720,
-        margin: "60px auto",
-        padding: "0 16px",
-        fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
-      }}
-    >
-      <header style={{ textAlign: "center", marginBottom: 28 }}>
-        <h1 style={{ margin: 0, fontSize: 28, letterSpacing: -0.5 }}>Ask my profile</h1>
-        <p style={{ margin: "10px 0 0", color: "#666", lineHeight: 1.4 }}>
-          Respondo únicamente usando documentos públicos y cito fuentes.
-        </p>
-      </header>
+    <div className="page">
+      <div className="shell">
+        <header className="header">
+          <h1 className="title">Ask my profile</h1>
+          <p className="subtitle">Respondo únicamente usando documentos públicos y cito fuentes.</p>
+        </header>
 
-      <div
-        style={{
-          border: "1px solid #e6e6e6",
-          borderRadius: 12,
-          padding: 14,
-          background: "#fff",
-        }}
-      >
-        <textarea
-          placeholder="Hazme una pregunta sobre mi perfil profesional…"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          style={{
-            width: "100%",
-            height: 96,
-            padding: 12,
-            fontSize: 14,
-            borderRadius: 10,
-            border: "1px solid #e6e6e6",
-            outline: "none",
-            resize: "none",
-          }}
-        />
-
-        <div style={{ margin: "14px 0" }}>
-          <TurnstileGate ref={gateRef} onVerify={(token) => setTurnstileToken(token)} />
-        </div>
-
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <button
-            onClick={handleSend}
-            disabled={loading}
-            style={{
-              padding: "10px 18px",
-              borderRadius: 10,
-              border: "1px solid #111",
-              background: loading ? "#444" : "#111",
-              color: "#fff",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontSize: 14,
-            }}
-          >
-            {loading ? "Pensando…" : "Enviar"}
-          </button>
-        </div>
-      </div>
-
-      {(answer || sources.length > 0) && (
-        <section style={{ marginTop: 26 }}>
-          {/* Respuesta */}
-          {answer && (
-            <div
-              style={{
-                border: "1px solid #e6e6e6",
-                borderRadius: 12,
-                padding: 16,
-                background: "#fff",
-              }}
-            >
-              <div style={{ color: "#666", fontSize: 12, marginBottom: 8 }}>Respuesta</div>
-              <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, fontSize: 15 }}>
-                {answer}
+        <main className="chat">
+          {/* Zona “mensajes” */}
+          <div className="messages">
+            {!answer ? (
+              <div className="emptyState">
+                <div className="emptyBadge">RAG</div>
+                <div className="emptyTitle">Haz una pregunta sobre mi perfil</div>
+                <div className="emptyHint">
+                  Ejemplos: “¿En qué proyectos he trabajado?” · “¿Qué stack uso?” · “¿Qué busco ahora?”
+                </div>
               </div>
-            </div>
-          )}
+            ) : (
+              <>
+                <div className="bubble assistant">
+                  <div className="bubbleLabel">Respuesta</div>
+                  <div className="bubbleText">{answer}</div>
+                </div>
 
-          {/* Fuentes */}
-          {sources.length > 0 && (
-            <div
-              style={{
-                marginTop: 14,
-                border: "1px solid #e6e6e6",
-                borderRadius: 12,
-                padding: 16,
-                background: "#fff",
-              }}
-            >
-              <div style={{ color: "#666", fontSize: 12, marginBottom: 10 }}>Fuentes</div>
+                {sources.length > 0 && (
+                  <details className="sources" open>
+                    <summary className="sourcesSummary">
+                      Fuentes <span className="sourcesCount">{sources.length}</span>
+                    </summary>
 
-              <div style={{ display: "grid", gap: 10 }}>
-                {sources.map((s, i) => {
-                  const label = s.sid ? `[${s.sid}]` : `[${i + 1}]`;
-                  const title = s.doc_title || "Documento";
-                  const path = s.source_path || "";
-                  const score = typeof s.score === "number" ? s.score.toFixed(3) : null;
+                    <div className="sourcesGrid">
+                      {sources.map((s, i) => {
+                        const label = s.sid ? `[${s.sid}]` : `[${i + 1}]`;
+                        const title = s.doc_title || "Documento";
+                        const path = s.source_path || "";
+                        const score = typeof s.score === "number" ? s.score.toFixed(3) : null;
 
-                  return (
-                    <div
-                      key={s.id || i}
-                      style={{
-                        border: "1px solid #f0f0f0",
-                        borderRadius: 10,
-                        padding: 12,
-                        background: "#fafafa",
-                      }}
-                    >
-                      <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-                        <span style={{ fontWeight: 700 }}>{label}</span>
-                        <span style={{ fontWeight: 600 }}>{title}</span>
-                        {score && (
-                          <span style={{ marginLeft: "auto", color: "#888", fontSize: 12 }}>
-                            score {score}
-                          </span>
-                        )}
-                      </div>
-
-                      {path && (
-                        <div style={{ color: "#777", fontSize: 12, marginTop: 4 }}>
-                          {path}
-                        </div>
-                      )}
-
-                      {s.excerpt && (
-                        <div style={{ color: "#333", fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
-                          {s.excerpt}
-                        </div>
-                      )}
+                        return (
+                          <div key={s.id || i} className="sourceCard">
+                            <div className="sourceTop">
+                              <span className="sourceTag">{label}</span>
+                              <span className="sourceTitle">{title}</span>
+                              {score && <span className="sourceScore">score {score}</span>}
+                            </div>
+                            {path && <div className="sourcePath">{path}</div>}
+                            {s.excerpt && <div className="sourceExcerpt">{s.excerpt}</div>}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                  </details>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Barra inferior */}
+          <div className="composer">
+            <div className="turnstileWrap">
+              <TurnstileGate ref={gateRef} onVerify={(token) => setTurnstileToken(token)} />
             </div>
-          )}
-        </section>
-      )}
+
+            <div className="composerRow">
+              <textarea
+                className="composerInput"
+                placeholder="Escribe tu pregunta… (Enter para enviar, Shift+Enter para nueva línea)"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={onKeyDown}
+              />
+
+              <button className="sendBtn" onClick={handleSend} disabled={loading}>
+                {loading ? "Pensando…" : "Enviar"}
+              </button>
+            </div>
+
+            <div className="composerHint">
+              Minimalista · Seguro (Turnstile + rate limit) · Respuestas con fuentes
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
