@@ -358,3 +358,128 @@ body{
   .composerRow{ flex-direction: column; }
   .sendBtn{ min-height: 44px; }
 }
+
+/* --- Chat bubbles (usuario derecha, assistant izquierda) --- */
+.msgRow{
+  display: flex;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.msgAssistant{
+  justify-content: flex-start;
+}
+
+.msgUser{
+  justify-content: flex-end;
+}
+
+.msgBubble{
+  max-width: 780px;
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 12px 12px;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.msgBubble.assistant{
+  background: rgba(15,24,36,0.70);
+}
+
+.msgBubble.user{
+  background: rgba(11,31,46,0.28);
+  border-color: rgba(42,93,135,0.28);
+}
+
+.msgText{
+  white-space: pre-wrap;
+}
+
+/* Sources inside assistant bubble */
+.msgSources{
+  margin-top: 10px;
+  border-top: 1px solid var(--border2);
+  padding-top: 10px;
+}
+
+.msgSourcesSummary{
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.msgSourcesSummary::-webkit-details-marker{ display:none; }
+
+/* Typing dots */
+.typing{
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dot{
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(200,220,240,0.65);
+  animation: blink 1.2s infinite ease-in-out;
+}
+
+.dot:nth-child(2){ animation-delay: 0.15s; }
+.dot:nth-child(3){ animation-delay: 0.30s; }
+
+@keyframes blink{
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0px); }
+  40% { opacity: 1; transform: translateY(-1px); }
+}
+
+/* Composer top row (memoria + limpiar) */
+.composerTopRow{
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.memoryCtl{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+}
+
+.memoryLabel{
+  font-size: 12px;
+  color: rgba(167,179,194,0.85);
+}
+
+.memorySlider{
+  width: 180px;
+}
+
+/* Ghost button */
+.ghostBtn{
+  border: 1px solid var(--border2);
+  background: rgba(15,24,36,0.35);
+  color: rgba(200,220,240,0.85);
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.ghostBtn:hover{
+  background: rgba(21,58,92,0.25);
+}
+
+.ghostBtn:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+}

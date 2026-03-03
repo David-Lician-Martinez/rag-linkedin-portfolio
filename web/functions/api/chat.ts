@@ -7,6 +7,10 @@ const PER_DAY_LIMIT = 80;
 const MAX_BODY_BYTES = 10_000;
 const MAX_QUESTION_CHARS = 800;
 
+// Memoria (historial corto)
+const MAX_HISTORY_MESSAGES = 12; // máx 6 turnos (user+assistant)
+const MAX_HISTORY_MSG_CHARS = 1200; // recorte por mensaje para controlar tokens
+
 // RAG config
 const RAG_CHUNKS_PATH = "/rag/chunks.json.gz";
 const RAG_TOP_K = 6;
@@ -15,6 +19,7 @@ const RAG_MIN_SCORE = 0.20; // umbral conservador para “hay evidencia”
 type ChatRequest = {
   question?: string;
   turnstileToken?: string;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
 };
 
 type Env = {
@@ -182,7 +187,7 @@ type RagChunk = {
 
 type RagStore = {
   chunks: RagChunk[];
-  norms: Float32Array; // precomputed L2 norms for chunk embeddings
+  norms: Float32Array;
   dim: number;
   loadedAt: number;
 };
@@ -190,7 +195,6 @@ type RagStore = {
 let RAG_CACHE: RagStore | null = null;
 
 async function gunzipToText(resp: Response): Promise<string> {
-  // Cloudflare Workers supports DecompressionStream in most runtimes
   const ds = new DecompressionStream("gzip");
   const decompressed = resp.body?.pipeThrough(ds);
   if (!decompressed) throw new Error("Missing response body for gzip stream.");
@@ -215,7 +219,6 @@ function dot(a: number[], b: number[]): number {
 async function loadRagStore(requestUrl: string): Promise<RagStore> {
   if (RAG_CACHE) return RAG_CACHE;
 
-  // Fetch static asset from same origin
   const url = new URL(RAG_CHUNKS_PATH, requestUrl);
   const resp = await fetch(url.toString(), { method: "GET" });
 
@@ -290,7 +293,7 @@ function topKCosine(
   for (let i = 0; i < store.chunks.length; i++) {
     const c = store.chunks[i];
     const score = dot(queryVec, c.embedding) / (qNorm * store.norms[i]);
-    // Insert into top-k list (small k -> simple insertion is fine)
+
     if (out.length < k) {
       out.push({ idx: i, score });
       out.sort((a, b) => b.score - a.score);
@@ -307,15 +310,14 @@ function buildContextAndSources(
   store: RagStore,
   picks: Array<{ idx: number; score: number }>
 ): { context: string; sources: any[] } {
-  // Asignamos IDs cortos y estables dentro de la respuesta
   const sources = picks.map(({ idx, score }, i) => {
     const c = store.chunks[idx];
-    const sid = `S${i + 1}`; // S1, S2, ...
+    const sid = `S${i + 1}`;
 
     const excerpt = c.text.length > 240 ? c.text.slice(0, 240) + "…" : c.text;
 
     return {
-      sid, // <- importante
+      sid,
       id: c.id,
       doc_title: c.doc_title || "",
       source_path: c.source_path || "",
@@ -324,7 +326,6 @@ function buildContextAndSources(
     };
   });
 
-  // Contexto: cada bloque lleva su SOURCE_ID fijo (S1..Sk)
   const context = sources
     .map((s) => {
       const c = store.chunks.find((x) => x.id === s.id)!;
@@ -397,6 +398,16 @@ export const onRequest = async ({ request, env }: { request: Request; env: Env }
     });
   }
 
+  // ---------- (NEW) History sanitization ----------
+  const rawHistory = Array.isArray(body.history) ? body.history : [];
+  const safeHistory = rawHistory
+    .slice(-MAX_HISTORY_MESSAGES)
+    .map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: (m.content ?? "").toString().slice(0, MAX_HISTORY_MSG_CHARS),
+    }))
+    .filter((m) => m.content.trim().length > 0);
+
   // ---------- RAG retrieval ----------
   let store: RagStore;
   try {
@@ -425,7 +436,6 @@ export const onRequest = async ({ request, env }: { request: Request; env: Env }
 
   const { context, sources } = buildContextAndSources(store, picks);
 
-  // Si no hay evidencia suficiente, no llamamos al LLM (ahorras € y evitas alucinación)
   if (bestScore < RAG_MIN_SCORE) {
     return jsonResponse(request, 200, {
       answer:
@@ -440,11 +450,14 @@ export const onRequest = async ({ request, env }: { request: Request; env: Env }
   const model = env.OPENAI_MODEL || "gpt-4o-mini";
 
   const systemPrompt = `Eres un asistente profesional del portfolio.
+
 REGLAS OBLIGATORIAS:
 - Responde SOLO usando la información del CONTEXTO proporcionado.
+- Puedes usar el HISTORIAL solo para entender referencias (“eso”, “ese proyecto”, “lo anterior”), pero NUNCA como fuente factual.
 - Si el contexto no contiene la respuesta, di exactamente: "No tengo información documentada sobre eso."
 - No inventes datos, fechas ni detalles.
 - Escribe en el idioma en el que se dirijan a ti, breve y claro.
+
 CITAS (MUY IMPORTANTE):
 - Debes incluir como mínimo 1 cita en el texto.
 - Las citas deben usar EXCLUSIVAMENTE los identificadores SOURCE_ID del contexto.
@@ -459,6 +472,12 @@ ${context}
 
 Tarea: Responde a la pregunta.`;
 
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...safeHistory,
+    { role: "user", content: userPrompt },
+  ];
+
   const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -468,10 +487,7 @@ Tarea: Responde a la pregunta.`;
     body: JSON.stringify({
       model,
       temperature: 0.2,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
+      messages,
     }),
   });
 
