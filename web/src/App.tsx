@@ -85,6 +85,8 @@ export default function App() {
     }
   });
 
+  const isLanding = messages.length === 0;
+
   // Persistencia local
   useEffect(() => {
     try {
@@ -92,12 +94,13 @@ export default function App() {
     } catch {}
   }, [messages]);
 
-  // Auto-scroll al final cuando llegan mensajes
+  // Auto-scroll al final cuando llegan mensajes (solo en modo chat)
   useEffect(() => {
+    if (isLanding) return;
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
-  }, [messages, loading]);
+  }, [messages, loading, isLanding]);
 
   const handleSend = async () => {
     const q = question.trim();
@@ -209,15 +212,15 @@ export default function App() {
   };
 
   return (
-    <div className="page">
-      <div className="shell">
+    <div className={`page ${isLanding ? "pageLanding" : "pageChat"}`}>
+      <div className={`shell ${isLanding ? "shellLanding" : "shellChat"}`}>
         <header className="header">
           <h1 className="title">Ask my profile</h1>
           <div className="nameTag">David Licián Martínez</div>
           <p className="subtitle">Respondo únicamente usando documentos públicos y cito fuentes.</p>
         </header>
 
-        <main className="chat">
+        <main className={`chat ${isLanding ? "chatLanding" : "chatChat"}`}>
           <div className="messages" ref={scrollRef}>
             {messages.length === 0 ? (
               <div className="emptyState">

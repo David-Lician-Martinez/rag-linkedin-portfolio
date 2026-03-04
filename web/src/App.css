@@ -1,26 +1,21 @@
 :root{
-  /* ====== PALETA (fiel al boceto) ====== */
   --bg0:#070912;
   --bg1:#0b1020;
 
   --text:#e8eef7;
   --muted: rgba(232,238,247,0.70);
 
-  /* Neones */
   --cyan: #7fd1ff;
   --blue: #4aa3ff;
   --indigo:#5b6cff;
   --purple:#b07cff;
 
-  /* Cristal */
   --glassA: rgba(9,12,22,0.56);
   --glassB: rgba(10,14,26,0.66);
 
-  /* Bordes */
   --border: rgba(170,190,255,0.16);
   --border2: rgba(170,190,255,0.10);
 
-  /* Sombras */
   --shadow: 0 22px 54px rgba(0,0,0,0.58);
 }
 
@@ -30,26 +25,37 @@ body{
   margin:0;
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-
-  /* Base */
-  background: radial-gradient(1200px 800px at 50% -15%, rgba(74,163,255,0.20), transparent 60%),
-              radial-gradient(1000px 700px at 80% 0%, rgba(176,124,255,0.18), transparent 62%),
-              radial-gradient(900px 650px at 20% 10%, rgba(91,108,255,0.12), transparent 65%),
-              linear-gradient(180deg, var(--bg0), var(--bg1));
+  background:
+    radial-gradient(1200px 800px at 50% -15%, rgba(74,163,255,0.20), transparent 60%),
+    radial-gradient(1000px 700px at 80% 0%, rgba(176,124,255,0.18), transparent 62%),
+    radial-gradient(900px 650px at 20% 10%, rgba(91,108,255,0.12), transparent 65%),
+    linear-gradient(180deg, var(--bg0), var(--bg1));
 }
 
-/* ====== LAYOUT ====== */
+/* ====== PAGE (2 modos) ====== */
 .page{
   min-height:100vh;
   display:flex;
   justify-content:center;
-  align-items:flex-start;
   padding: 56px 24px 72px;
   position: relative;
   overflow:hidden;
+  transition: padding 240ms ease, align-items 240ms ease;
 }
 
-/* Starfield (CSS-only) */
+/* Landing: centrado estilo Claude */
+.pageLanding{
+  align-items:center;
+  padding-top: 42px;
+}
+
+/* Chat: arriba */
+.pageChat{
+  align-items:flex-start;
+  padding-top: 56px;
+}
+
+/* Starfield */
 .page::before{
   content:"";
   position:absolute;
@@ -74,7 +80,7 @@ body{
   filter: blur(0.2px);
 }
 
-/* Haze glow */
+/* Haze */
 .page::after{
   content:"";
   position:absolute;
@@ -88,6 +94,7 @@ body{
   filter: blur(10px);
 }
 
+/* ====== SHELL (marco neon) ====== */
 .shell{
   width: 100%;
   max-width: 980px;
@@ -96,7 +103,6 @@ body{
   flex-direction:column;
   align-items:center;
 
-  /* Marco interior como en el boceto */
   position: relative;
   padding: 34px 34px 26px;
   border-radius: 26px;
@@ -106,9 +112,23 @@ body{
   box-shadow: var(--shadow);
   border: 1px solid rgba(170,190,255,0.10);
   overflow: hidden;
+
+  transition: max-width 260ms ease, padding 260ms ease, transform 260ms ease;
+  z-index: 1;
 }
 
-/* halo del marco */
+/* Landing: más estrecho y compacto */
+.shellLanding{
+  max-width: 860px;
+  padding: 30px 30px 22px;
+}
+
+/* Chat: vuelve al tamaño grande */
+.shellChat{
+  max-width: 980px;
+  padding: 34px 34px 26px;
+}
+
 .shell::before{
   content:"";
   position:absolute;
@@ -124,7 +144,6 @@ body{
   opacity: 0.28;
 }
 
-/* borde neon fino */
 .shell::after{
   content:"";
   position:absolute;
@@ -151,7 +170,7 @@ body{
   text-align:center;
   margin-bottom: 18px;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .title{
@@ -179,11 +198,9 @@ body{
   line-height: 1.5;
 }
 
-/* ====== CHAT CONTAINER ====== */
+/* ====== CHAT (2 modos) ====== */
 .chat{
   width: 100%;
-  max-width: 920px;
-  margin: 0 auto;
   border: 1px solid rgba(170,190,255,0.14);
   background: var(--glassA);
   backdrop-filter: blur(14px);
@@ -192,12 +209,24 @@ body{
   overflow:hidden;
   display:flex;
   flex-direction:column;
-  min-height: 560px;
   position: relative;
-  z-index: 1;
+  z-index: 2;
+
+  transition: max-width 260ms ease, min-height 260ms ease;
 }
 
-/* un borde interno sutil (como panel dentro del marco) */
+/* Landing: “cuadro pequeño” estilo Claude */
+.chatLanding{
+  max-width: 760px;
+  min-height: 420px;
+}
+
+/* Chat: vuelve al grande */
+.chatChat{
+  max-width: 920px;
+  min-height: 560px;
+}
+
 .chat::after{
   content:"";
   position:absolute;
@@ -207,7 +236,7 @@ body{
   box-shadow: inset 0 0 0 1px rgba(170,190,255,0.06);
 }
 
-/* Messages area */
+/* Messages */
 .messages{
   padding: 18px;
   flex: 1;
@@ -224,7 +253,7 @@ body{
   background: rgba(170,190,255,0.16);
 }
 
-/* Empty state (panel interior como boceto) */
+/* Empty state */
 .emptyState{
   border: 1px solid rgba(170,190,255,0.10);
   background: rgba(10,14,26,0.42);
@@ -259,7 +288,7 @@ body{
   line-height: 1.5;
 }
 
-/* ====== Chat bubbles ====== */
+/* ====== Bubbles ====== */
 .msgRow{
   display: flex;
   width: 100%;
@@ -283,7 +312,6 @@ body{
   background: rgba(12,16,30,0.60);
 }
 
-/* usuario: tinte más evidente azul->morado (boceto) */
 .msgBubble.user{
   background: linear-gradient(
     180deg,
@@ -295,7 +323,7 @@ body{
 
 .msgText{ white-space: pre-wrap; }
 
-/* Sources inside assistant bubble */
+/* Sources */
 .msgSources{
   margin-top: 10px;
   border-top: 1px solid rgba(170,190,255,0.10);
@@ -315,7 +343,6 @@ body{
 }
 .msgSourcesSummary::-webkit-details-marker{ display:none; }
 
-/* Sources cards */
 .sourcesCount{
   font-size: 12px;
   color: rgba(232,238,247,0.60);
@@ -369,7 +396,6 @@ body{
   position: relative;
 }
 
-/* línea neon fina arriba del composer */
 .composer::before{
   content:"";
   position:absolute;
@@ -416,7 +442,6 @@ body{
   accent-color: rgba(74,163,255,0.85);
 }
 
-/* Composer row */
 .composerRow{
   display:flex;
   gap: 10px;
@@ -447,7 +472,6 @@ body{
   box-shadow: 0 0 0 4px rgba(74,163,255,0.14);
 }
 
-/* Enviar (más fiel al boceto: azul con glow) */
 .sendBtn{
   min-width: 120px;
   border-radius: 14px;
@@ -486,7 +510,6 @@ body{
   cursor: not-allowed;
 }
 
-/* Ghost button (Limpiar chat) */
 .ghostBtn{
   border: 1px solid rgba(170,190,255,0.12);
   background: rgba(12,16,30,0.34);
@@ -538,7 +561,7 @@ body{
   40% { opacity: 1; transform: translateY(-1px); }
 }
 
-/* Footer redes (que parezca dentro del marco, como en el boceto) */
+/* Footer */
 .footer{
   position: fixed;
   bottom: 22px;
@@ -548,7 +571,7 @@ body{
   display:flex;
   align-items:center;
   gap:10px;
-  z-index: 2;
+  z-index: 3;
 }
 
 .footer a{
@@ -562,9 +585,7 @@ body{
   text-shadow: 0 0 18px rgba(127,209,255,0.22);
 }
 
-.footerDivider{
-  opacity: 0.55;
-}
+.footerDivider{ opacity: 0.55; }
 
 /* Responsive */
 @media (max-width: 640px){
@@ -576,7 +597,10 @@ body{
   .shell::after{ border-radius: 22px; }
 
   .title{ font-size: 28px; }
-  .chat{ min-height: 620px; }
+
+  .chatLanding{ min-height: 440px; }
+  .chatChat{ min-height: 620px; }
+
   .composerRow{ flex-direction: column; }
   .sendBtn{ min-height: 44px; }
 }
