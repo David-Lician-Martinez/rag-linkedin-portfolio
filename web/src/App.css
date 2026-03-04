@@ -564,7 +564,7 @@ body{
 /* Footer */
 .footer{
   position: fixed;
-  bottom: 22px;
+  bottom: 16px;
   left: 34px;
   font-size: 13px;
   color: rgba(232,238,247,0.40);
