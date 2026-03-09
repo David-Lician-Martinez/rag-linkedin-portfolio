@@ -21,6 +21,7 @@ type ChatMsg = {
 };
 
 type Lang = "es" | "en";
+type RatingValue = 1 | 2 | 3 | 4 | 5;
 
 function uid() {
   return Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
@@ -128,9 +129,12 @@ export default function App() {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState<RatingValue>(5);
+
   const [lang, setLang] = useState<Lang | null>(() => {
     try {
-      const saved = localStorage.getItem("rag_ui_lang");
+      const saved = sessionStorage.getItem("rag_ui_lang");
       return saved === "es" || saved === "en" ? saved : null;
     } catch {
       return null;
@@ -161,7 +165,7 @@ export default function App() {
   useEffect(() => {
     if (!lang) return;
     try {
-      localStorage.setItem("rag_ui_lang", lang);
+      sessionStorage.setItem("rag_ui_lang", lang);
     } catch {}
   }, [lang]);
 
@@ -281,6 +285,29 @@ export default function App() {
     setLang(nextLang);
   };
 
+  const feedbackLabel = lang === "en" ? "Give me feedback" : "Dame feedback";
+  const feedbackTitle = lang === "en" ? "Send feedback" : "Enviar feedback";
+  const feedbackSubtitle =
+    lang === "en"
+      ? "Rate the experience and send me your comments by email."
+      : "Valora la experiencia y envíame tus comentarios por correo.";
+  const feedbackRatingLabel = lang === "en" ? "Rating" : "Calificación";
+  const feedbackEmailBtn = lang === "en" ? "Send by email" : "Enviar por email";
+  const feedbackCloseBtn = lang === "en" ? "Close" : "Cerrar";
+
+  const feedbackMailHref =
+    lang === "en"
+      ? `mailto:davidlicianmartinez@hotmail.com?subject=${encodeURIComponent(
+          "Feedback about your RAG portfolio"
+        )}&body=${encodeURIComponent(
+          `Hi David,\n\nI would like to share some feedback about your RAG portfolio.\n\nRating: ${feedbackRating}/5\n\nComments:\n`
+        )}`
+      : `mailto:davidlicianmartinez@hotmail.com?subject=${encodeURIComponent(
+          "Feedback sobre tu portfolio RAG"
+        )}&body=${encodeURIComponent(
+          `Hola David,\n\nQuería darte el siguiente feedback sobre tu portfolio RAG.\n\nCalificación: ${feedbackRating}/5\n\nComentarios:\n`
+        )}`;
+
   return (
     <>
       {showLanguageModal && (
@@ -307,6 +334,64 @@ export default function App() {
               <button className="langBtn" onClick={() => chooseLanguage("en")}>
                 {COPY.en.modalEnBtn}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showFeedbackModal && (
+        <div className="modalOverlay" onClick={() => setShowFeedbackModal(false)}>
+          <div
+            className="feedbackModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="feedback-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="feedbackModalGlow" />
+
+            <h2 id="feedback-modal-title" className="feedbackModalTitle">
+              {feedbackTitle}
+            </h2>
+
+            <p className="feedbackModalSubtitle">{feedbackSubtitle}</p>
+
+            <div className="feedbackRatingBlock">
+              <div className="feedbackRatingLabel">{feedbackRatingLabel}</div>
+
+              <div className="feedbackStars" aria-label={feedbackRatingLabel}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    className={`feedbackStar ${star <= feedbackRating ? "active" : ""}`}
+                    onClick={() => setFeedbackRating(star as RatingValue)}
+                    aria-label={`${star} star${star > 1 ? "s" : ""}`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+
+              <div className="feedbackRatingValue">{feedbackRating}/5</div>
+            </div>
+
+            <div className="feedbackModalActions">
+              <button
+                type="button"
+                className="ghostBtn"
+                onClick={() => setShowFeedbackModal(false)}
+              >
+                {feedbackCloseBtn}
+              </button>
+
+              <a
+                className="sendBtn feedbackEmailLink"
+                href={feedbackMailHref}
+                onClick={() => setShowFeedbackModal(false)}
+              >
+                {feedbackEmailBtn}
+              </a>
             </div>
           </div>
         </div>
@@ -410,6 +495,17 @@ export default function App() {
               <div className="composerHint">{t.composerHint}</div>
             </div>
           </main>
+
+	  {/* Feedback dock */}
+    	  <div className="feedbackDock">
+            <button
+              type="button"
+              className="feedbackDockBtn"
+              onClick={() => setShowFeedbackModal(true)}
+            >
+              {feedbackLabel}
+            </button>
+          </div>
 
           <footer className="footer">
             <a

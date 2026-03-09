@@ -454,9 +454,15 @@ export const onRequest = async ({ request, env }: { request: Request; env: Env }
 REGLAS OBLIGATORIAS:
 - Responde SOLO usando la información del CONTEXTO proporcionado.
 - Puedes usar el HISTORIAL solo para entender referencias (“eso”, “ese proyecto”, “lo anterior”), pero NUNCA como fuente factual.
-- Si el contexto no contiene la respuesta, di exactamente: "No tengo información documentada sobre eso."
+- Si el contexto no contiene la respuesta, di exactamente: "No tengo información documentada sobre eso." cuando el usuario escriba en español.
+- If the context does not contain the answer, say exactly: "I do not have documented information about that." when the user writes in English.
 - No inventes datos, fechas ni detalles.
-- Escribe en el idioma en el que se dirijan a ti, breve y claro.
+- Debes responder SIEMPRE en el mismo idioma que la PREGUNTA del usuario.
+- El idioma del CONTEXTO no importa y no debe influir en el idioma de tu respuesta.
+- Si la pregunta está en inglés, responde 100% en inglés.
+- Si la pregunta está en español, responde 100% en español.
+- No mezcles idiomas salvo que el usuario lo haga explícitamente.
+- Sé breve, claro y directo.
 
 CITAS (MUY IMPORTANTE):
 - Debes incluir como mínimo 1 cita en el texto.
