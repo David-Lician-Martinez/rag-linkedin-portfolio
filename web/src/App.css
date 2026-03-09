@@ -32,7 +32,7 @@ body{
     linear-gradient(180deg, var(--bg0), var(--bg1));
 }
 
-/* ====== PAGE (2 modos) ====== */
+/* ====== PAGE ====== */
 .page{
   min-height:100vh;
   display:flex;
@@ -43,19 +43,16 @@ body{
   transition: padding 240ms ease, align-items 240ms ease;
 }
 
-/* Landing: centrado estilo Claude */
 .pageLanding{
   align-items:center;
   padding-top: 42px;
 }
 
-/* Chat: arriba */
 .pageChat{
   align-items:flex-start;
   padding-top: 56px;
 }
 
-/* Starfield */
 .page::before{
   content:"";
   position:absolute;
@@ -80,7 +77,6 @@ body{
   filter: blur(0.2px);
 }
 
-/* Haze */
 .page::after{
   content:"";
   position:absolute;
@@ -94,7 +90,7 @@ body{
   filter: blur(10px);
 }
 
-/* ====== SHELL (marco neon) ====== */
+/* ====== SHELL ====== */
 .shell{
   width: 100%;
   max-width: 980px;
@@ -117,13 +113,11 @@ body{
   z-index: 1;
 }
 
-/* Landing: más estrecho y compacto */
 .shellLanding{
   max-width: 860px;
   padding: 30px 30px 22px;
 }
 
-/* Chat: vuelve al tamaño grande */
 .shellChat{
   max-width: 980px;
   padding: 34px 34px 26px;
@@ -198,7 +192,7 @@ body{
   line-height: 1.5;
 }
 
-/* ====== CHAT (2 modos) ====== */
+/* ====== CHAT ====== */
 .chat{
   width: 100%;
   border: 1px solid rgba(170,190,255,0.14);
@@ -215,13 +209,11 @@ body{
   transition: max-width 260ms ease, min-height 260ms ease;
 }
 
-/* Landing: “cuadro pequeño” estilo Claude */
 .chatLanding{
   max-width: 760px;
   min-height: 420px;
 }
 
-/* Chat: vuelve al grande */
 .chatChat{
   max-width: 920px;
   min-height: 560px;
@@ -236,7 +228,6 @@ body{
   box-shadow: inset 0 0 0 1px rgba(170,190,255,0.06);
 }
 
-/* Messages */
 .messages{
   padding: 18px;
   flex: 1;
@@ -253,7 +244,6 @@ body{
   background: rgba(170,190,255,0.16);
 }
 
-/* Empty state */
 .emptyState{
   border: 1px solid rgba(170,190,255,0.10);
   background: rgba(10,14,26,0.42);
@@ -288,7 +278,7 @@ body{
   line-height: 1.5;
 }
 
-/* ====== Bubbles ====== */
+/* ====== BUBBLES ====== */
 .msgRow{
   display: flex;
   width: 100%;
@@ -323,7 +313,6 @@ body{
 
 .msgText{ white-space: pre-wrap; }
 
-/* Sources */
 .msgSources{
   margin-top: 10px;
   border-top: 1px solid rgba(170,190,255,0.10);
@@ -388,7 +377,7 @@ body{
   opacity: 0.95;
 }
 
-/* ====== Composer ====== */
+/* ====== COMPOSER ====== */
 .composer{
   border-top: 1px solid rgba(170,190,255,0.12);
   background: var(--glassB);
@@ -426,20 +415,8 @@ body{
   margin-bottom: 10px;
 }
 
-.memoryCtl{
-  display:flex;
-  align-items:center;
-  gap: 12px;
-}
-
-.memoryLabel{
-  font-size: 12px;
-  color: rgba(232,238,247,0.65);
-}
-
-.memorySlider{
-  width: 180px;
-  accent-color: rgba(74,163,255,0.85);
+.composerTopRowSingle{
+  justify-content: flex-end;
 }
 
 .composerRow{
@@ -539,7 +516,7 @@ body{
   color: rgba(232,238,247,0.46);
 }
 
-/* Typing dots */
+/* ====== TYPING ====== */
 .typing{
   display: inline-flex;
   gap: 6px;
@@ -561,10 +538,10 @@ body{
   40% { opacity: 1; transform: translateY(-1px); }
 }
 
-/* Footer */
+/* ====== FOOTER ====== */
 .footer{
   position: fixed;
-  bottom: 6px;
+  bottom: 10px;
   left: 34px;
   font-size: 13px;
   color: rgba(232,238,247,0.40);
@@ -587,7 +564,124 @@ body{
 
 .footerDivider{ opacity: 0.55; }
 
-/* Responsive */
+/* ====== MODAL ====== */
+.modalOverlay{
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(4, 6, 14, 0.62);
+  backdrop-filter: blur(8px);
+}
+
+.welcomeModal{
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  border-radius: 22px;
+  padding: 28px 24px 24px;
+  background:
+    linear-gradient(180deg, rgba(12,16,30,0.92), rgba(10,14,26,0.92));
+  border: 1px solid rgba(170,190,255,0.16);
+  box-shadow:
+    0 28px 80px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(127,209,255,0.04) inset;
+  overflow: hidden;
+}
+
+.welcomeGlow{
+  position: absolute;
+  inset: -20% -10% auto -10%;
+  height: 180px;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(127,209,255,0.18), transparent 45%),
+    radial-gradient(circle at 80% 50%, rgba(176,124,255,0.18), transparent 45%);
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.welcomeTitle{
+  position: relative;
+  margin: 0 0 16px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  z-index: 1;
+}
+
+.welcomeText{
+  position: relative;
+  z-index: 1;
+  color: rgba(232,238,247,0.84);
+  line-height: 1.7;
+  font-size: 15px;
+}
+
+.welcomeText p{
+  margin: 0;
+}
+
+.welcomeDividerText{
+  margin-top: 16px !important;
+  padding-top: 16px;
+  border-top: 1px solid rgba(170,190,255,0.10);
+  color: rgba(232,238,247,0.78);
+}
+
+.welcomeLangLabel{
+  position: relative;
+  z-index: 1;
+  margin-top: 22px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: rgba(232,238,247,0.72);
+}
+
+.welcomeActions{
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.langBtn{
+  min-width: 140px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(170,190,255,0.14);
+  background: rgba(12,16,30,0.72);
+  color: rgba(232,238,247,0.92);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.langBtn:hover{
+  transform: translateY(-1px);
+  border-color: rgba(127,209,255,0.24);
+  box-shadow: 0 0 0 4px rgba(127,209,255,0.08);
+}
+
+.langBtnPrimary{
+  background: linear-gradient(
+    180deg,
+    rgba(90,120,255,0.34),
+    rgba(74,163,255,0.22)
+  );
+  border-color: rgba(127,209,255,0.24);
+}
+
+/* ====== RESPONSIVE ====== */
 @media (max-width: 640px){
   .shell{
     padding: 26px 18px 20px;
@@ -603,4 +697,25 @@ body{
 
   .composerRow{ flex-direction: column; }
   .sendBtn{ min-height: 44px; }
+
+  .footer{
+    left: 20px;
+    bottom: 8px;
+  }
+
+  .welcomeModal{
+    padding: 24px 18px 20px;
+  }
+
+  .welcomeTitle{
+    font-size: 21px;
+  }
+
+  .welcomeText{
+    font-size: 14px;
+  }
+
+  .langBtn{
+    width: 100%;
+  }
 }

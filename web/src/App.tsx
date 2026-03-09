@@ -20,19 +20,15 @@ type ChatMsg = {
   ts: number;
 };
 
+type Lang = "es" | "en";
+
 function uid() {
   return Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
 }
 
-/**
- * Construye el historial que mandamos al backend:
- * - Tomamos los últimos N mensajes
- * - Recortamos tamaño total para controlar tokens
- */
 function buildHistoryForBackend(messages: ChatMsg[], maxMessages: number, maxCharsTotal: number) {
   const last = messages.slice(-maxMessages);
 
-  // Recorte por caracteres total (desde el final hacia atrás)
   let total = 0;
   const out: Array<{ role: "user" | "assistant"; content: string }> = [];
 
@@ -43,7 +39,6 @@ function buildHistoryForBackend(messages: ChatMsg[], maxMessages: number, maxCha
 
     const add = content.length;
     if (total + add > maxCharsTotal) {
-      // Si no cabe, metemos un recorte de este mensaje (al principio) y paramos
       const remaining = Math.max(0, maxCharsTotal - total);
       if (remaining > 200) {
         out.unshift({ role: m.role, content: content.slice(-remaining) });
@@ -58,23 +53,91 @@ function buildHistoryForBackend(messages: ChatMsg[], maxMessages: number, maxCha
   return out;
 }
 
+const COPY = {
+  es: {
+    title: "Ask my profile",
+    subtitle: "Respondo únicamente usando documentos públicos y cito fuentes.",
+    emptyBadge: "RAG",
+    emptyTitle: "Haz una pregunta sobre mi perfil",
+    emptyHint:
+      "Ejemplos: “¿En qué proyectos he trabajado?” · “¿Qué stack uso?” · “¿Qué busco ahora?”",
+    sources: "Fuentes",
+    document: "Documento",
+    clearChat: "Limpiar chat",
+    send: "Enviar",
+    thinking: "Pensando…",
+    placeholder: "Escribe tu pregunta… (Enter para enviar, Shift+Enter para nueva línea)",
+    composerHint: "Historial local · Últimos 8 turnos · Respuestas con fuentes",
+    completeTurnstile: "Completa el Turnstile primero.",
+    tooManyRequests: (retryAfter: string) =>
+      `Demasiadas peticiones. Prueba de nuevo en ${retryAfter}s.`,
+    validationFailed: "Validación fallida. Completa el Turnstile e inténtalo de nuevo.",
+    genericError: "Ha ocurrido un error al procesar tu petición.",
+    apiError: "Error llamando a la API.",
+    score: "score",
+    modalTitle: "Bienvenido",
+    modalLangLabel: "Idioma del chat",
+    modalEsBtn: "Español",
+    modalEnBtn: "English",
+    introEs:
+      'Hola. Soy David Licián Martínez y he creado este RAG documentado y actualizado a mi CV. Puedes utilizarlo para realizarle preguntas sobre mi formación profesional y mis intereses laborales. Si desconoce la respuesta a una pregunta, responde: "No tengo información documentada sobre eso".',
+    introEn:
+      'Hello. I am David Licián Martínez and I created this documented RAG, updated to match my CV. You can use it to ask questions about my professional background and my career interests. If it does not know the answer to a question, it should respond: "I do not have documented information about that".',
+  },
+  en: {
+    title: "Ask my profile",
+    subtitle: "I answer only using public documents and I cite sources.",
+    emptyBadge: "RAG",
+    emptyTitle: "Ask a question about my profile",
+    emptyHint:
+      'Examples: "What projects have I worked on?" · "What stack do I use?" · "What am I looking for now?"',
+    sources: "Sources",
+    document: "Document",
+    clearChat: "Clear chat",
+    send: "Send",
+    thinking: "Thinking…",
+    placeholder: "Type your question… (Enter to send, Shift+Enter for a new line)",
+    composerHint: "Local history · Last 8 turns · Answers with sources",
+    completeTurnstile: "Complete the Turnstile first.",
+    tooManyRequests: (retryAfter: string) =>
+      `Too many requests. Try again in ${retryAfter}s.`,
+    validationFailed: "Validation failed. Complete the Turnstile and try again.",
+    genericError: "An error occurred while processing your request.",
+    apiError: "Error calling the API.",
+    score: "score",
+    modalTitle: "Welcome",
+    modalLangLabel: "Chat language",
+    modalEsBtn: "Español",
+    modalEnBtn: "English",
+    introEs:
+      'Hola. Soy David Licián Martínez y he creado este RAG documentado y actualizado a mi CV. Puedes utilizarlo para realizarle preguntas sobre mi formación profesional y mis intereses laborales. Si desconoce la respuesta a una pregunta, responde: "No tengo información documentada sobre eso".',
+    introEn:
+      'Hello. I am David Licián Martínez and I created this documented RAG, updated to match my CV. You can use it to ask questions about my professional background and my career interests. If it does not know the answer to a question, it should respond: "I do not have documented information about that".',
+  },
+} as const;
+
 export default function App() {
   const gateRef = useRef<TurnstileGateHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Memoria (ajustable)
-  const [memoryTurns, setMemoryTurns] = useState<number>(4); // 1..8 turnos
-  const maxMessagesForBackend = useMemo(() => Math.max(2, memoryTurns * 2), [memoryTurns]);
-
-  // Control de coste: ~6.000 chars de historial máximo (≈ 1k–1.5k tokens aprox, depende idioma)
+  const memoryTurns = 8;
+  const maxMessagesForBackend = useMemo(() => memoryTurns * 2, []);
   const MAX_HISTORY_CHARS = 6000;
 
   const [question, setQuestion] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [lang, setLang] = useState<Lang | null>(() => {
+    try {
+      const saved = localStorage.getItem("rag_ui_lang");
+      return saved === "es" || saved === "en" ? saved : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [messages, setMessages] = useState<ChatMsg[]>(() => {
-    // opcional: persistencia en localStorage
     try {
       const raw = localStorage.getItem("rag_chat_messages");
       if (!raw) return [];
@@ -85,16 +148,23 @@ export default function App() {
     }
   });
 
+  const t = COPY[lang ?? "es"];
   const isLanding = messages.length === 0;
+  const showLanguageModal = lang === null;
 
-  // Persistencia local
   useEffect(() => {
     try {
       localStorage.setItem("rag_chat_messages", JSON.stringify(messages));
     } catch {}
   }, [messages]);
 
-  // Auto-scroll al final cuando llegan mensajes (solo en modo chat)
+  useEffect(() => {
+    if (!lang) return;
+    try {
+      localStorage.setItem("rag_ui_lang", lang);
+    } catch {}
+  }, [lang]);
+
   useEffect(() => {
     if (isLanding) return;
     const el = scrollRef.current;
@@ -107,7 +177,7 @@ export default function App() {
     if (!q) return;
 
     if (!turnstileToken) {
-      alert("Completa el Turnstile primero.");
+      alert(t.completeTurnstile);
       return;
     }
 
@@ -118,13 +188,11 @@ export default function App() {
       ts: Date.now(),
     };
 
-    // Añadimos mensaje de usuario instantáneo
     setMessages((prev) => [...prev, userMsg]);
     setQuestion("");
     setLoading(true);
 
     try {
-      // Historial para backend (incluye el userMsg recién añadido)
       const history = buildHistoryForBackend(
         [...messages, userMsg],
         maxMessagesForBackend,
@@ -137,7 +205,7 @@ export default function App() {
         body: JSON.stringify({
           question: q,
           turnstileToken,
-          history, // 👈 memoria
+          history,
         }),
       });
 
@@ -152,12 +220,10 @@ export default function App() {
       if (!response.ok) {
         const errText =
           response.status === 429
-            ? `Demasiadas peticiones. Prueba de nuevo en ${
-                response.headers.get("Retry-After") || "unos segundos"
-              }s.`
+            ? t.tooManyRequests(response.headers.get("Retry-After") || "a few seconds")
             : response.status === 403
-            ? "Validación fallida. Completa el Turnstile e inténtalo de nuevo."
-            : "Ha ocurrido un error al procesar tu petición.";
+            ? t.validationFailed
+            : t.genericError;
 
         setMessages((prev) => [
           ...prev,
@@ -186,7 +252,7 @@ export default function App() {
         {
           id: uid(),
           role: "assistant",
-          text: "Error llamando a la API.",
+          text: t.apiError,
           ts: Date.now(),
         },
       ]);
@@ -211,142 +277,159 @@ export default function App() {
     } catch {}
   };
 
+  const chooseLanguage = (nextLang: Lang) => {
+    setLang(nextLang);
+  };
+
   return (
-    <div className={`page ${isLanding ? "pageLanding" : "pageChat"}`}>
-      <div className={`shell ${isLanding ? "shellLanding" : "shellChat"}`}>
-        <header className="header">
-          <h1 className="title">Ask my profile</h1>
-          <div className="nameTag">David Licián Martínez</div>
-          <p className="subtitle">Respondo únicamente usando documentos públicos y cito fuentes.</p>
-        </header>
+    <>
+      {showLanguageModal && (
+        <div className="modalOverlay">
+          <div className="welcomeModal" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+            <div className="welcomeGlow" />
+            <h2 id="welcome-title" className="welcomeTitle">
+              {COPY.es.modalTitle} · {COPY.en.modalTitle}
+            </h2>
 
-        <main className={`chat ${isLanding ? "chatLanding" : "chatChat"}`}>
-          <div className="messages" ref={scrollRef}>
-            {messages.length === 0 ? (
-              <div className="emptyState">
-                <div className="emptyBadge">RAG</div>
-                <div className="emptyTitle">Haz una pregunta sobre mi perfil</div>
-                <div className="emptyHint">
-                  Ejemplos: “¿En qué proyectos he trabajado?” · “¿Qué stack uso?” · “¿Qué busco ahora?”
+            <div className="welcomeText">
+              <p>{COPY.es.introEs}</p>
+              <p className="welcomeDividerText">{COPY.en.introEn}</p>
+            </div>
+
+            <div className="welcomeLangLabel">
+              {COPY.es.modalLangLabel} · {COPY.en.modalLangLabel}
+            </div>
+
+            <div className="welcomeActions">
+              <button className="langBtn langBtnPrimary" onClick={() => chooseLanguage("es")}>
+                {COPY.es.modalEsBtn}
+              </button>
+              <button className="langBtn" onClick={() => chooseLanguage("en")}>
+                {COPY.en.modalEnBtn}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`page ${isLanding ? "pageLanding" : "pageChat"}`}>
+        <div className={`shell ${isLanding ? "shellLanding" : "shellChat"}`}>
+          <header className="header">
+            <h1 className="title">{t.title}</h1>
+            <div className="nameTag">David Licián Martínez</div>
+            <p className="subtitle">{t.subtitle}</p>
+          </header>
+
+          <main className={`chat ${isLanding ? "chatLanding" : "chatChat"}`}>
+            <div className="messages" ref={scrollRef}>
+              {messages.length === 0 ? (
+                <div className="emptyState">
+                  <div className="emptyBadge">{t.emptyBadge}</div>
+                  <div className="emptyTitle">{t.emptyTitle}</div>
+                  <div className="emptyHint">{t.emptyHint}</div>
                 </div>
-              </div>
-            ) : (
-              <>
-                {messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`msgRow ${m.role === "user" ? "msgUser" : "msgAssistant"}`}
-                  >
-                    <div className={`msgBubble ${m.role}`}>
-                      <div className="msgText">{m.text}</div>
+              ) : (
+                <>
+                  {messages.map((m) => (
+                    <div
+                      key={m.id}
+                      className={`msgRow ${m.role === "user" ? "msgUser" : "msgAssistant"}`}
+                    >
+                      <div className={`msgBubble ${m.role}`}>
+                        <div className="msgText">{m.text}</div>
 
-                      {m.role === "assistant" && m.sources && m.sources.length > 0 && (
-                        <details className="msgSources">
-                          <summary className="msgSourcesSummary">
-                            Fuentes <span className="sourcesCount">{m.sources.length}</span>
-                          </summary>
-                          <div className="sourcesGrid">
-                            {m.sources.map((s, i) => {
-                              const label = s.sid ? `[${s.sid}]` : `[${i + 1}]`;
-                              const title = s.doc_title || "Documento";
-                              const path = s.source_path || "";
-                              const score = typeof s.score === "number" ? s.score.toFixed(3) : null;
+                        {m.role === "assistant" && m.sources && m.sources.length > 0 && (
+                          <details className="msgSources">
+                            <summary className="msgSourcesSummary">
+                              {t.sources} <span className="sourcesCount">{m.sources.length}</span>
+                            </summary>
+                            <div className="sourcesGrid">
+                              {m.sources.map((s, i) => {
+                                const label = s.sid ? `[${s.sid}]` : `[${i + 1}]`;
+                                const title = s.doc_title || t.document;
+                                const path = s.source_path || "";
+                                const score = typeof s.score === "number" ? s.score.toFixed(3) : null;
 
-                              return (
-                                <div key={(s.id || "") + i} className="sourceCard">
-                                  <div className="sourceTop">
-                                    <span className="sourceTag">{label}</span>
-                                    <span className="sourceTitle">{title}</span>
-                                    {score && <span className="sourceScore">score {score}</span>}
+                                return (
+                                  <div key={(s.id || "") + i} className="sourceCard">
+                                    <div className="sourceTop">
+                                      <span className="sourceTag">{label}</span>
+                                      <span className="sourceTitle">{title}</span>
+                                      {score && <span className="sourceScore">{t.score} {score}</span>}
+                                    </div>
+                                    {path && <div className="sourcePath">{path}</div>}
+                                    {s.excerpt && <div className="sourceExcerpt">{s.excerpt}</div>}
                                   </div>
-                                  {path && <div className="sourcePath">{path}</div>}
-                                  {s.excerpt && <div className="sourceExcerpt">{s.excerpt}</div>}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </details>
-                      )}
+                                );
+                              })}
+                            </div>
+                          </details>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
 
-                {loading && (
-                  <div className="msgRow msgAssistant">
-                    <div className="msgBubble assistant typing">
-                      <span className="dot" />
-                      <span className="dot" />
-                      <span className="dot" />
+                  {loading && (
+                    <div className="msgRow msgAssistant">
+                      <div className="msgBubble assistant typing">
+                        <span className="dot" />
+                        <span className="dot" />
+                        <span className="dot" />
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+                  )}
+                </>
+              )}
+            </div>
 
-          <div className="composer">
-            <div className="composerTopRow">
-              <div className="memoryCtl">
-                <div className="memoryLabel">
-                  Memoria: <strong>{memoryTurns}</strong> turnos
-                </div>
-                <input
-                  className="memorySlider"
-                  type="range"
-                  min={1}
-                  max={8}
-                  value={memoryTurns}
-                  onChange={(e) => setMemoryTurns(Number(e.target.value))}
-                />
+            <div className="composer">
+              <div className="composerTopRow composerTopRowSingle">
+                <button className="ghostBtn" onClick={clearChat} disabled={loading}>
+                  {t.clearChat}
+                </button>
               </div>
 
-              <button className="ghostBtn" onClick={clearChat} disabled={loading}>
-                Limpiar chat
-              </button>
+              <div className="turnstileWrap">
+                <TurnstileGate ref={gateRef} onVerify={(token) => setTurnstileToken(token)} />
+              </div>
+
+              <div className="composerRow">
+                <textarea
+                  className="composerInput"
+                  placeholder={t.placeholder}
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={onKeyDown}
+                />
+
+                <button className="sendBtn" onClick={handleSend} disabled={loading}>
+                  {loading ? t.thinking : t.send}
+                </button>
+              </div>
+
+              <div className="composerHint">{t.composerHint}</div>
             </div>
+          </main>
 
-            <div className="turnstileWrap">
-              <TurnstileGate ref={gateRef} onVerify={(token) => setTurnstileToken(token)} />
-            </div>
-
-            <div className="composerRow">
-              <textarea
-                className="composerInput"
-                placeholder="Escribe tu pregunta… (Enter para enviar, Shift+Enter para nueva línea)"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                onKeyDown={onKeyDown}
-              />
-
-              <button className="sendBtn" onClick={handleSend} disabled={loading}>
-                {loading ? "Pensando…" : "Enviar"}
-              </button>
-            </div>
-
-            <div className="composerHint">
-              Historial local · Contexto limitado · Respuestas con fuentes
-            </div>
-          </div>
-        </main>
-
-        <footer className="footer">
-          <a
-            href="https://github.com/David-Lician-Martinez"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub
-          </a>
-          <span className="footerDivider">·</span>
-          <a
-            href="https://www.linkedin.com/in/david-lician/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            LinkedIn
-          </a>
-        </footer>
+          <footer className="footer">
+            <a
+              href="https://github.com/David-Lician-Martinez"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
+            </a>
+            <span className="footerDivider">·</span>
+            <a
+              href="https://www.linkedin.com/in/david-lician/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              LinkedIn
+            </a>
+          </footer>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
