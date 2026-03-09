@@ -1,5 +1,5 @@
 // web/functions/api/chat.ts
-const BUILD_TAG = "OPENAI_V1_2026-02-25";
+const BUILD_TAG = "OPENAI_V1_2026-03-09";
 
 // Seguridad / límites
 const PER_MINUTE_LIMIT = 8;
@@ -8,18 +8,21 @@ const MAX_BODY_BYTES = 10_000;
 const MAX_QUESTION_CHARS = 800;
 
 // Memoria (historial corto)
-const MAX_HISTORY_MESSAGES = 12; // máx 6 turnos (user+assistant)
-const MAX_HISTORY_MSG_CHARS = 1200; // recorte por mensaje para controlar tokens
+const MAX_HISTORY_MESSAGES = 16; // máx 8 turnos (user+assistant)
+const MAX_HISTORY_MSG_CHARS = 1000; // recorte por mensaje para controlar tokens
 
 // RAG config
 const RAG_CHUNKS_PATH = "/rag/chunks.json.gz";
 const RAG_TOP_K = 6;
 const RAG_MIN_SCORE = 0.20; // umbral conservador para “hay evidencia”
 
+type UiLanguage = "es" | "en";
+
 type ChatRequest = {
   question?: string;
   turnstileToken?: string;
   history?: Array<{ role: "user" | "assistant"; content: string }>;
+  uiLanguage?: UiLanguage;
 };
 
 type Env = {
@@ -340,6 +343,22 @@ ${c.text}`;
   return { context, sources };
 }
 
+function normalizeUiLanguage(value: unknown): UiLanguage {
+  return value === "en" ? "en" : "es";
+}
+
+function getNoInfoAnswer(lang: UiLanguage): string {
+  return lang === "en"
+    ? "I do not have documented information about that."
+    : "No tengo información documentada sobre eso.";
+}
+
+function getLowConfidenceAnswer(lang: UiLanguage): string {
+  return lang === "en"
+    ? "I do not have enough documented information in my public documents to answer that confidently."
+    : "No tengo información documentada suficiente en mis documentos públicos para responder con confianza a esa pregunta.";
+}
+
 /* ---------------------------
    Main handler
 ---------------------------- */
@@ -367,6 +386,7 @@ export const onRequest = async ({ request, env }: { request: Request; env: Env }
   const body: ChatRequest = await request.json().catch(() => ({}));
   const question = (body.question ?? "").toString().trim();
   const turnstileToken = (body.turnstileToken ?? "").toString().trim();
+  const uiLanguage = normalizeUiLanguage(body.uiLanguage);
 
   if (!question) {
     return jsonResponse(request, 400, { error: "missing_question", build: BUILD_TAG });
@@ -398,7 +418,7 @@ export const onRequest = async ({ request, env }: { request: Request; env: Env }
     });
   }
 
-  // ---------- (NEW) History sanitization ----------
+  // ---------- History sanitization ----------
   const rawHistory = Array.isArray(body.history) ? body.history : [];
   const safeHistory = rawHistory
     .slice(-MAX_HISTORY_MESSAGES)
@@ -433,50 +453,60 @@ export const onRequest = async ({ request, env }: { request: Request; env: Env }
 
   const picks = topKCosine(qVec, store, RAG_TOP_K);
   const bestScore = picks[0]?.score ?? 0;
-
   const { context, sources } = buildContextAndSources(store, picks);
 
   if (bestScore < RAG_MIN_SCORE) {
     return jsonResponse(request, 200, {
-      answer:
-        "No tengo información documentada suficiente en mis documentos públicos para responder con confianza a esa pregunta.",
+      answer: getLowConfidenceAnswer(uiLanguage),
       sources,
       build: BUILD_TAG,
-      retrieval: { top_k: RAG_TOP_K, best_score: Number(bestScore.toFixed(4)) },
+      retrieval: {
+        top_k: RAG_TOP_K,
+        best_score: Number(bestScore.toFixed(4)),
+        ui_language: uiLanguage,
+      },
     });
   }
 
   // ---------- LLM answer with strict grounding ----------
   const model = env.OPENAI_MODEL || "gpt-4o-mini";
+  const noInfoAnswer = getNoInfoAnswer(uiLanguage);
+  const forcedLanguageLabel = uiLanguage === "en" ? "English" : "Spanish";
 
-  const systemPrompt = `Eres un asistente profesional del portfolio.
+  const systemPrompt = `You are a professional portfolio assistant.
 
-REGLAS OBLIGATORIAS:
-- Responde SOLO usando la información del CONTEXTO proporcionado.
-- Puedes usar el HISTORIAL solo para entender referencias (“eso”, “ese proyecto”, “lo anterior”), pero NUNCA como fuente factual.
-- Si el contexto no contiene la respuesta, di exactamente: "No tengo información documentada sobre eso." cuando el usuario escriba en español.
-- If the context does not contain the answer, say exactly: "I do not have documented information about that." when the user writes in English.
-- No inventes datos, fechas ni detalles.
-- Debes responder SIEMPRE en el mismo idioma que la PREGUNTA del usuario.
-- El idioma del CONTEXTO no importa y no debe influir en el idioma de tu respuesta.
-- Si la pregunta está en inglés, responde 100% en inglés.
-- Si la pregunta está en español, responde 100% en español.
-- No mezcles idiomas salvo que el usuario lo haga explícitamente.
-- Sé breve, claro y directo.
+MANDATORY RULES:
+- Answer ONLY using the information in the provided CONTEXT.
+- You may use HISTORY only to resolve references such as “that”, “that project”, or “the previous one”, but NEVER as a factual source.
+- If the context does not contain the answer, reply with exactly: "${noInfoAnswer}"
+- Do not invent facts, dates, companies, technologies, achievements, or details.
+- You MUST answer in ${forcedLanguageLabel}.
+- The UI language is the source of truth and overrides the language of the question and the language of the context.
+- Even if the user writes in another language, you MUST still answer in ${forcedLanguageLabel}.
+- The language of the CONTEXT must NOT influence the language of your answer.
+- Do not mix languages unless the user explicitly asks for a bilingual answer.
+- Keep the answer brief, clear, and professional.
 
-CITAS (MUY IMPORTANTE):
-- Debes incluir como mínimo 1 cita en el texto.
-- Las citas deben usar EXCLUSIVAMENTE los identificadores SOURCE_ID del contexto.
-- Formato exacto de cita: [S1] o [S2] etc.
-- No uses "[source_path]" ni inventes IDs.`;
+CITATIONS (VERY IMPORTANT):
+- You must include at least 1 citation in the answer text.
+- Citations must use ONLY the SOURCE_ID identifiers from the context.
+- Exact citation format: [S1] or [S2] etc.
+- Do not use "[source_path]" and do not invent IDs.`;
 
-  const userPrompt = `PREGUNTA:
+  const userPrompt = `UI_LANGUAGE: ${uiLanguage}
+REQUIRED_RESPONSE_LANGUAGE: ${forcedLanguageLabel}
+FALLBACK_IF_MISSING_INFO: ${noInfoAnswer}
+
+QUESTION:
 ${question}
 
-CONTEXTO:
+CONTEXT:
 ${context}
 
-Tarea: Responde a la pregunta.`;
+TASK:
+Answer the question using ONLY the context.
+Write the full answer in ${forcedLanguageLabel}.
+Include at least one citation in the form [S1], [S2], etc.`;
 
   const messages = [
     { role: "system", content: systemPrompt },
@@ -503,12 +533,16 @@ Tarea: Responde a la pregunta.`;
   }
 
   const data = (await resp.json()) as any;
-  const answer = data?.choices?.[0]?.message?.content ?? "";
+  const answer = data?.choices?.[0]?.message?.content ?? noInfoAnswer;
 
   return jsonResponse(request, 200, {
     answer,
     sources,
     build: BUILD_TAG,
-    retrieval: { top_k: RAG_TOP_K, best_score: Number(bestScore.toFixed(4)) },
+    retrieval: {
+      top_k: RAG_TOP_K,
+      best_score: Number(bestScore.toFixed(4)),
+      ui_language: uiLanguage,
+    },
   });
 };

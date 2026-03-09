@@ -722,30 +722,52 @@ body{
 
 /* Feedback dock */
 
+/* Feedback side tab */
+
 .feedbackDock{
   position: fixed;
-  left: 30px;
-  top: 60%;
+  left: 0;
+  top: 65%;
   transform: translateY(-50%);
-  z-index: 50;
+  z-index: 100;
 }
 
+/* botón lateral */
 .feedbackDockBtn{
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+
   border: none;
-  background: transparent;
-  padding: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(127,209,255,0.75);
-  text-decoration: none;
-  letter-spacing: 0.3px;
   cursor: pointer;
-  transition: all 0.2s ease;
+
+  padding: 16px 10px;
+
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+
+  color: rgba(127,209,255,0.85);
+
+  background: rgba(12,16,30,0.75);
+  backdrop-filter: blur(8px);
+
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+
+  border: 1px solid rgba(127,209,255,0.25);
+  border-left: none;
+
+  transition: all 0.25s ease;
 }
 
 .feedbackDockBtn:hover{
   color: rgba(127,209,255,1);
-  text-shadow: 0 0 12px rgba(127,209,255,0.35);
+
+  background: rgba(12,16,30,0.9);
+
+  box-shadow:
+    0 0 14px rgba(127,209,255,0.25),
+    inset 0 0 6px rgba(127,209,255,0.15);
 }
 
 /* Overlay del modal */
@@ -881,13 +903,20 @@ body{
   text-decoration: none;
 }
 
-@media (max-width: 640px){
+@media (max-width: 768px){
   .feedbackDock{
-    left: 16px;
+    left: 10px;
     top: auto;
-    bottom: 90px;
+    bottom: 110px;
     transform: none;
   }
+
+  .feedbackDockBtn{
+      writing-mode: horizontal-tb;
+      transform: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+    }
 
   .feedbackModal{
     max-width: 100%;

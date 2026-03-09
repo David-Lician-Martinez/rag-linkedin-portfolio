@@ -210,6 +210,7 @@ export default function App() {
           question: q,
           turnstileToken,
           history,
+          uiLanguage: lang ?? "es",
         }),
       });
 
