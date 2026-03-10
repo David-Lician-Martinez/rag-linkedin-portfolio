@@ -27,34 +27,44 @@ Documents are converted into embeddings offline and served as a static vector st
 
 # Repository Structure
 
-rag-linkedin-portfolio
-│
-├─ scripts
-│   └─ build_rag_corpus.py
-│
-├─ web
-│   ├─ functions
-│   │   └─ api
-│   │       ├─ chat.ts
-│   │       └─ health.ts
-│   │
-│   ├─ public
-│   │   └─ rag
-│   │       ├─ docs
-│   │       │   ├─ about.md
-│   │       │   ├─ cv_public.md
-│   │       │   ├─ project_cases.md
-│   │       │   └─ faq.md
-│   │       │
-│   │       ├─ chunks.json.gz
-│   │       └─ manifest.json
-│   │
-│   └─ src
-│       ├─ App.tsx
-│       ├─ TurnstileGate.tsx
-│       └─ main.tsx
-│
-└─ README.md
+rag-linkedin-portfolio/
+├── scripts/
+│   └── build_rag_corpus.py
+├── web/
+│   ├── functions/
+│   │   └── api/
+│   │       ├── chat.ts
+│   │       └── health.ts
+│   ├── public/
+│   │   ├── rag/
+│   │   │   ├── docs/
+│   │   │   ├── chunks.json.gz
+│   │   │   └── manifest.json
+│   │   └── vite.svg
+│   ├── src/
+│   │   ├── assets/
+│   │   │   └── react.svg
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── TurnstileGate.tsx
+│   │   ├── index.css
+│   │   └── main.tsx
+│   ├── .gitignore
+│   ├── README.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
+├── .gitattributes
+├── .gitignore
+├── LICENSE
+├── README.md
+├── package-lock.json
+└── package.json
 
 # How it works
 
