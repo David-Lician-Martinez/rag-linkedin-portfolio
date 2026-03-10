@@ -63,7 +63,9 @@ rag-linkedin-portfolio
 ## 1. Document ingestion
 
 Portfolio documents are written as Markdown files:
+```
 web/public/rag/docs/
+```
 
 These include:
 - CV
@@ -74,7 +76,9 @@ These include:
 ## 2. Offline vectorization
 
 The script:
+```
 scripts/build_rag_corpus.py
+```
 
 performs:
 - text cleaning
@@ -83,8 +87,10 @@ performs:
 - vector store creation
 
 Output:
+```
 chunks.json.gz
 manifest.json
+```
 
 ## 3. Retrieval pipeline
 
