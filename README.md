@@ -27,6 +27,7 @@ Documents are converted into embeddings offline and served as a static vector st
 
 # Repository Structure
 
+```
 rag-linkedin-portfolio
 │
 ├─ scripts
@@ -55,6 +56,7 @@ rag-linkedin-portfolio
 │       └─ main.tsx
 │
 └─ README.md
+```
 
 # How it works
 
