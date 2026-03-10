@@ -6,7 +6,7 @@ The assistant is grounded in structured documents derived from my CV and project
 
 ## Live Demo
 Ask questions about my experience, projects, or skills.
-[Try it yourself](rag.davidlician.com)
+[Try it yourself](https://rag.davidlician.com/)
 
 Examples:
 - "What projects has David worked on?"
