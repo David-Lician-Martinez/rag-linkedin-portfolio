@@ -56,7 +56,7 @@ function buildHistoryForBackend(messages: ChatMsg[], maxMessages: number, maxCha
 
 const COPY = {
   es: {
-    title: "Pregunta a mi perfil (Beta)",
+    title: "Pregunta a mi perfil",
     subtitle: "Respondo únicamente usando documentos públicos y cito fuentes.",
     emptyBadge: "RAG",
     emptyTitle: "Haz una pregunta sobre mi perfil",
@@ -86,7 +86,7 @@ const COPY = {
       'Hello. I am David Licián Martínez and I created this documented RAG, updated to match my CV. You can use it to ask questions about my professional background and my career interests. If it does not know the answer to a question, it should respond: "I do not have documented information about that".',
   },
   en: {
-    title: "Ask my profile (Beta)",
+    title: "Ask my profile",
     subtitle: "I answer only using public documents and I cite sources.",
     emptyBadge: "RAG",
     emptyTitle: "Ask a question about my profile",
